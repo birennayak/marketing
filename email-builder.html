@@ -1,0 +1,305 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Marketing Email Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    .nmb *{box-sizing:border-box}
+    .nmb{max-width:980px;margin:20px auto;padding:0 12px;font:14px/1.45 Arial,Helvetica,sans-serif;color:#0b111a}
+    .nmb h2{font-size:18px;margin:6px 0 8px}
+    .nmb .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+    .nmb .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .nmb .stack{display:flex;flex-direction:column;gap:8px}
+    .nmb input[type=text],.nmb input[type=url],.nmb select,.nmb textarea{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;font:14px/1.4 inherit}
+    .nmb .btn{appearance:none;border:1px solid #d1d5db;border-radius:10px;padding:9px 12px;background:#fff;cursor:pointer;font-weight:600}
+    .nmb .btn.primary{background:#1e7b74;border-color:#1e7b74;color:#fff}
+    .nmb .btn.ghost{background:#f8fafc}
+    .nmb .muted{color:#64748b;font-size:12px}
+    .nmb .grid{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+    @media (max-width:900px){.nmb .grid{grid-template-columns:1fr}}
+    .nmb .blk{border:1px solid #e5e7eb;border-radius:10px;padding:10px}
+    .nmb .preview{background:#f8fafc;border:1px dashed #d1d5db;border-radius:12px;overflow:auto}
+  </style>
+</head>
+<body>
+<div class="nmb">
+  <div class="card">
+    <h2>Marketing Email Builder</h2>
+    <div class="muted">
+      Images / GIF / Button / YouTube (thumb→link). No default padding; set Row/Column padding. Header/footer fixed; links get UTMs.
+    </div>
+
+    <!-- UTMs + optional header color -->
+    <div class="grid" style="margin-top:8px;">
+      <div><label>utm_source</label><input id="utm_source" value="email"></div>
+      <div><label>utm_medium</label><input id="utm_medium" value="crm"></div>
+      <div><label>utm_campaign</label><input id="utm_campaign" value="promo_generic"></div>
+      <div><label>utm_content</label><input id="utm_content" value="hero_main"></div>
+      <div><label>utm_term (optional)</label><input id="utm_term" value=""></div>
+      <div><label>Header top color (hex, optional)</label><input id="hdr_color" placeholder="#00C9A7"></div>
+    </div>
+
+    <!-- Optional hero -->
+    <div class="grid" style="margin-top:8px;">
+      <div><label>Hero image URL (optional)</label><input id="hero_url" type="url" placeholder="https://cdn.../hero.jpg"></div>
+      <div><label>Hero click URL (optional)</label><input id="hero_href" type="url" placeholder="https://www.netmeds.com/..."></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="row" style="margin-top:10px;">
+      <button class="btn" id="add_row">+ Add Row</button>
+      <button class="btn ghost" id="gen">Generate</button>
+      <button class="btn ghost" id="copy">Copy Final HTML</button>
+      <button class="btn primary" id="download">Download .html</button>
+      <span class="muted">Preview (600px) below.</span>
+    </div>
+
+    <!-- Rows/Columns UI -->
+    <div id="rows_wrap" class="stack" style="margin-top:8px;"></div>
+
+    <!-- Output -->
+    <div class="stack" style="margin-top:12px;">
+      <label>Final Email HTML (body-only)</label>
+      <textarea id="out_html" readonly style="min-height:220px;"></textarea>
+      <label>Live Preview</label>
+      <div id="preview" class="preview"></div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ s=(s==null?"":String(s)); return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+  function youThumb(url){
+    if(!url) return "";
+    var m = url.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/); if(m && m[1]) return "https://img.youtube.com/vi/"+m[1]+"/hqdefault.jpg";
+    m = url.match(/[?&]v=([A-Za-z0-9_-]{6,})/);         if(m && m[1]) return "https://img.youtube.com/vi/"+m[1]+"/hqdefault.jpg";
+    m = url.match(/\/(?:embed|v)\/([A-Za-z0-9_-]{6,})/);if(m && m[1]) return "https://img.youtube.com/vi/"+m[1]+"/hqdefault.jpg";
+    return "";
+  }
+  function withUTM(raw,utm){
+    if(!raw) return ""; if(!/^https?:\/\//i.test(raw)) return raw;
+    var out = raw + (raw.indexOf("?")!==-1 ? "&" : "?"); var first = true;
+    function add(k,v){ if(!v) return; if(!first) out += "&"; out += encodeURIComponent(k)+"="+encodeURIComponent(v); first=false; }
+    add("utm_source",utm.utm_source); add("utm_medium",utm.utm_medium); add("utm_campaign",utm.utm_campaign);
+    add("utm_content",utm.utm_content); add("utm_term",utm.utm_term); return out;
+  }
+
+  var rowsWrap = $("rows_wrap");
+
+  function addRow(){
+    var r = document.createElement("div");
+    r.className = "blk"; r.setAttribute("data-row","1");
+    r.innerHTML =
+      '<div class="row" style="justify-content:space-between;">' +
+        '<strong>Row</strong>' +
+        '<div class="row" style="gap:6px;">' +
+          '<label>Row padding (px)</label>' +
+          '<input type="text" data-rowpad placeholder="e.g., 0 or 16 8 16 8" style="width:200px">' +
+          '<button type="button" class="btn" data-addcol>+ Add Column</button>' +
+          '<button type="button" class="btn" data-removerow>Remove Row</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="row stack" data-cols></div>' +
+      '<div class="row" style="margin-top:6px;">' +
+        '<button type="button" class="btn" data-addrow>+ Add New Row Below</button>' +
+      '</div>';
+    r.querySelector("[data-addcol]").onclick = function(){ addCol(r); };
+    r.querySelector("[data-removerow]").onclick = function(){ r.remove(); };
+    r.querySelector("[data-addrow]").onclick   = function(){ r.after(addRow()); };
+    rowsWrap.appendChild(r);
+    return r;
+  }
+
+  function addCol(rowEl){
+    var c = document.createElement("div");
+    c.className = "blk";
+    c.innerHTML =
+      '<div class="row" style="justify-content:space-between;">' +
+        '<div class="row" style="gap:6px;">' +
+          '<label>Type</label>' +
+          '<select data-type>' +
+            '<option value="image">Image</option>' +
+            '<option value="gif">GIF</option>' +
+            '<option value="button">Button</option>' +
+            '<option value="youtube">YouTube</option>' +
+          '</select>' +
+          '<label>Column padding (px)</label>' +
+          '<input type="text" data-colpad placeholder="e.g., 0 or 8 8 8 8" style="width:160px">' +
+          '<label>Alignment</label>' +
+          '<select data-align>' +
+            '<option value="center" selected>Center</option>' +
+            '<option value="left">Left</option>' +
+            '<option value="right">Right</option>' +
+          '</select>' +
+        '</div>' +
+        '<button type="button" class="btn" data-removecol>Remove Column</button>' +
+      '</div>' +
+      '<div class="grid">' +
+        '<div><label>Value</label><input data-value type="text" placeholder="Image/GIF: image URL · Button: CTA text · YouTube: video URL"></div>' +
+        '<div><label>Link (optional for images/YouTube; REQUIRED for button)</label><input data-href type="url" placeholder="https://... (click URL)"></div>' +
+      '</div>' +
+      '<div class="grid">' +
+        '<div><label>Alt text (recommended)</label><input data-alt type="text" maxlength="150" placeholder="Describe the image"></div>' +
+        '<div><label>Width (px, optional)</label><input data-w type="text" placeholder="e.g., 260"></div>' +
+      '</div>';
+    c.querySelector("[data-removecol]").onclick = function(){ c.remove(); };
+    rowEl.querySelector("[data-cols]").appendChild(c);
+  }
+
+  $("add_row").onclick = function(){ addRow(); };
+  addRow();
+
+  function readRows(){
+    var out = [], rows = document.querySelectorAll(".blk[data-row]");
+    for(var i=0;i<rows.length;i++){
+      var row = rows[i];
+      var rowPad = (row.querySelector("[data-rowpad]") ? row.querySelector("[data-rowpad]").value : "").trim();
+      var cols = [], colNodes = row.querySelectorAll("[data-cols] > .blk");
+      for(var j=0;j<colNodes.length;j++){
+        var col = colNodes[j];
+        cols.push({
+          type:  col.querySelector("[data-type]").value,
+          value: col.querySelector("[data-value]").value.trim(),
+          href:  col.querySelector("[data-href]").value.trim(),
+          alt:   col.querySelector("[data-alt]").value.trim(),
+          w:     col.querySelector("[data-w]").value.trim(),
+          pad:   (col.querySelector("[data-colpad]") ? col.querySelector("[data-colpad]").value.trim() : ""),
+          align: (col.querySelector("[data-align]") ? col.querySelector("[data-align]").value.trim() : "center")
+        });
+      }
+      out.push({ pad: rowPad, cols: cols });
+    }
+    return out;
+  }
+
+  function headerHTML(utm, overrideColor){
+    var bg = (overrideColor && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(overrideColor)) ? overrideColor : "#00C9A7";
+    var html = '';
+    html += '<table align="center" border="0" cellpadding="0" cellspacing="0" style="background-color:'+bg+'; width:100%; height:72px;"><tbody><tr>';
+    html +=   '<td style="width:20%; padding:12px 0 12px 14px;"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/headerLft.png"></td>';
+    html +=   '<td style="width:60%; padding:12px 0; text-align:center;"><a href="'+esc(withUTM("https://www.netmeds.com/",utm))+'" style="text-decoration:none;"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/netmeds-logo.png"></a></td>';
+    html +=   '<td style="width:20%; padding:12px 14px 12px 0;"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/headerRgt.png"></td>';
+    html += '</tr></tbody></table>';
+    return html;
+  }
+
+  function footerHTML(utm){
+    var html = '';
+    html += '<table align="center" border="0" cellpadding="0" cellspacing="0" style="font-family:Arial, Helvetica, sans-serif;background:#eeeeee;width:100%; padding:24px 32px 40px; border-bottom:1px solid rgb(205 205 205);"><tbody><tr><td>';
+    html +=   '<p style="color:#000;font-family:Arial Black;font-size:18px;font-style:normal;font-weight:900;line-height:normal;letter-spacing:-0.54px; margin:0; padding:0 0 24px;">Connect with us<br />';
+    html +=     '<a href="'+esc(withUTM("https://www.facebook.com/NetMeds",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 12px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-FB.png"></a>';
+    html +=     '<a href="'+esc(withUTM("https://twitter.com/NetMeds",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 12px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-Twitter.png"></a>';
+    html +=     '<a href="'+esc(withUTM("https://www.instagram.com/netmedsofficial",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 12px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-Instagram.png"></a>';
+    html +=     '<a href="'+esc(withUTM("https://youtube.com/@netmeds",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-Youtube.png"></a></p>';
+    html +=   '<p style="color:#000;font-family:Arial Black;font-size:18px;font-style:normal;font-weight:900;line-height:normal;letter-spacing:-0.54px; margin:0; padding:0;">Download the app<br />';
+    html +=     '<a href="'+esc(withUTM("https://play.google.com/store/apps/details?id=com.NetmedsMarketplace.Netmeds&hl=en",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 16px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-Android.png"></a>';
+    html +=     '<a href="'+esc(withUTM("https://itunes.apple.com/in/app/netmeds/id1011070011?mt=8",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-IOS.png"></a></p>';
+    html += '</td></tr></tbody></table>';
+
+    html += '<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;background:#eeeeee; padding:12px 32px; margin:0; border-bottom:1px solid rgb(205 205 205);"><tbody>';
+    html +=   '<tr><td style="color:rgba(11,18,25,0.5);text-align:left; padding:15px 0 0;  font-family:Arial; font-size:14px; font-style:normal;">© 2025 Netmeds Marketplace Limited. All Rights Reserved</td></tr>';
+    html +=   '<tr><td style="color:rgba(11,18,25,0.5);text-align:left; padding:15px 0 0;  font-family:Arial; font-size:14px; font-style:normal;"><a href="'+esc(withUTM("https://www.netmeds.tech/terms-and-conditions",utm))+'" style="color:#08332C;font-weight:700; line-height:18px; letter-spacing:-0.07px; text-decoration:none;">Terms &amp; Conditions</a></td></tr>';
+    html +=   '<tr><td style="padding:0;">' +
+                '<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"><tr>' +
+                  '<td style="text-align:left;"><p style="color:rgba(11,18,25,0.5);font-size:12px;"><a href="{{MANAGE_PREFERENCES_URL}}">Manage My Preferences</a></p></td>' +
+                  '<td style="text-align:right;"><p style="color:rgba(11,18,25,0.5);font-size:12px;"><a href="{{UNSUBSCRIBE_URL}}">Unsubscribe</a></p></td>' +
+                '</tr></table>' +
+              '</td></tr>';
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function buildCellHTML(col, utm){
+    var wAttr = col.w ? (' width="'+ (Number(col.w)||col.w) +'"') : '';
+    if(col.type==="button"){
+      var text = col.value, href = col.href; if(!text||!href) return "";
+      return '<a href="'+esc(withUTM(href,utm))+'" style="background:#00C9A7;color:#ffffff;border-radius:999px;display:inline-block;padding:14px 22px;font:700 16px/16px Arial,Helvetica,sans-serif;text-decoration:none">'+esc(text)+'</a>';
+    }
+    if(col.type==="youtube"){
+      var thumb=youThumb(col.value)||"", link=col.href||col.value||"#", alt=col.alt||"Watch video"; if(!thumb) return "";
+      return '<a href="'+esc(withUTM(link,utm))+'"><img src="'+esc(thumb)+'"'+wAttr+' style="display:block;width:100%;height:auto;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" alt="'+esc(alt)+'"></a>';
+    }
+    var src=col.value||"", href2=col.href||"", alt2=col.alt||""; if(!src) return "";
+    var img='<img src="'+esc(src)+'"'+wAttr+' style="display:block;width:100%;height:auto;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" alt="'+esc(alt2)+'">';
+    return href2?('<a href="'+esc(withUTM(href2,utm))+'">'+img+'</a>'):img;
+  }
+
+  function buildContentHTML(rows, utm, hero){
+    var html = "";
+    if(hero.url){
+      html += '<tr><td style="font-size:0; line-height:0; padding:0; text-align:center;" align="center">';
+      if(hero.href){ html += '<a href="'+esc(withUTM(hero.href,utm))+'">'; }
+      html += '<img src="'+esc(hero.url)+'" width="600" style="display:block;width:100%;height:auto;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" alt="">';
+      if(hero.href){ html += '</a>'; }
+      html += '</td></tr>';
+    }
+    for(var i=0;i<rows.length;i++){
+      var row=rows[i]; if(!row.cols.length) continue;
+      var rowPad=(row.pad||"").trim(); var rowPadStyle='padding:'+(rowPad?esc(rowPad):'0')+';';
+      html += '<tr><td style="'+rowPadStyle+' font-size:0; line-height:0;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt;"><tr>';
+      var widthPct=Math.floor(100/row.cols.length);
+      for(var j=0;j<row.cols.length;j++){
+        var c=row.cols[j]; var pad=(c.pad||"").trim(); var padStyle='padding:'+(pad?esc(pad):'0')+';';
+        var align=(c.align||"center").toLowerCase(); var safeAlign=(align==="left"||align==="right")?align:"center";
+        html += '<td valign="top" align="'+safeAlign+'" style="'+padStyle+' width:'+widthPct+'%; font-size:0; line-height:0; text-align:'+safeAlign+';">'+buildCellHTML(c,utm)+'</td>';
+      }
+      html += '</tr></table></td></tr>';
+    }
+    return html;
+  }
+
+  function readUTM(){
+    return {
+      utm_source: $("utm_source").value.trim(),
+      utm_medium: $("utm_medium").value.trim(),
+      utm_campaign: $("utm_campaign").value.trim(),
+      utm_content: $("utm_content").value.trim(),
+      utm_term: $("utm_term").value.trim()
+    };
+  }
+
+  function buildBodyHTML(){
+    var utm = readUTM();
+    var hero = { url: $("hero_url").value.trim(), href: $("hero_href").value.trim() };
+    var rows = readRows();
+    var hdrColor = $("hdr_color").value.trim();
+
+    var html = '';
+    html += '<table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:0 auto; font-family:Arial, Helvetica, sans-serif; max-width:600px; width:100%;border-collapse:collapse; border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt;"><tbody>';
+    html +=   '<tr><td style="background-color:#ffffff; padding:0; font-size:0; line-height:0;">';
+    html +=     headerHTML(utm, hdrColor);
+    html +=     '<table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background:#ffffff; text-align:left;border-collapse:collapse; border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt;"><tbody>';
+    html +=       buildContentHTML(rows, utm, hero);
+    html +=     '</tbody></table>';
+    html +=     footerHTML(utm);
+    html +=     '<table align="center" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt;"></table>';
+    html +=   '</td></tr></tbody></table>';
+    return html;
+  }
+
+  function generate(){ var html=buildBodyHTML(); $("out_html").value=html; $("preview").innerHTML=html; }
+  $("gen").onclick = generate;
+
+  $("copy").onclick = function(){
+    var v = $("out_html").value; if(!v) return;
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(v); }
+    else { $("out_html").select(); try{ document.execCommand("copy"); }catch(e){} }
+    var b=$("copy"), t=b.textContent; b.textContent="Copied ✓"; setTimeout(function(){ b.textContent=t; }, 1200);
+  };
+
+  // Download via data URI (no Blob/URL apis)
+  $("download").onclick = function(){
+    if(!$("out_html").value.trim()) generate();
+    var body = $("out_html").value;
+    var full = '<!doctype html>\n<html>\n<head>\n  <meta charset="utf-8">\n  <meta name="x-apple-disable-message-reformatting">\n  <meta name="viewport" content="width=device-width, initial-scale=1">\n  <title>Netmeds Email</title>\n</head>\n<body bgcolor="#ffffff" style="margin:0;padding:0;background-color:#ffffff;">\n' + body + '\n</body>\n</html>';
+    var uri = "data:text/html;charset=utf-8," + encodeURIComponent(full);
+    var a = document.createElement("a"); a.href = uri; a.download = "netmeds-email.html";
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+})();
+</script>
+</body>
+</html>
