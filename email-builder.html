@@ -5,301 +5,850 @@
   <title>Marketing Email Builder</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    .nmb *{box-sizing:border-box}
-    .nmb{max-width:980px;margin:20px auto;padding:0 12px;font:14px/1.45 Arial,Helvetica,sans-serif;color:#0b111a}
-    .nmb h2{font-size:18px;margin:6px 0 8px}
-    .nmb .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
-    .nmb .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .nmb .stack{display:flex;flex-direction:column;gap:8px}
-    .nmb input[type=text],.nmb input[type=url],.nmb select,.nmb textarea{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;font:14px/1.4 inherit}
-    .nmb .btn{appearance:none;border:1px solid #d1d5db;border-radius:10px;padding:9px 12px;background:#fff;cursor:pointer;font-weight:600}
-    .nmb .btn.primary{background:#1e7b74;border-color:#1e7b74;color:#fff}
-    .nmb .btn.ghost{background:#f8fafc}
-    .nmb .muted{color:#64748b;font-size:12px}
-    .nmb .grid{display:grid;gap:12px;grid-template-columns:1fr 1fr}
-    @media (max-width:900px){.nmb .grid{grid-template-columns:1fr}}
-    .nmb .blk{border:1px solid #e5e7eb;border-radius:10px;padding:10px}
-    .nmb .preview{background:#f8fafc;border:1px dashed #d1d5db;border-radius:12px;overflow:auto}
+    :root{
+      --brand:#00C9A7; --ink:#0b111a; --muted:#64748b; --line:#e5e7eb; --bg:#f6f8fa; --card:#ffffff;
+      --warn:#f59e0b; --bad:#ef4444; --good:#10b981;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    .wrap{max-width:1024px;margin:20px auto;padding:0 12px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+    .head{padding:16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .head h1{font-size:18px;margin:0}
+    .pill{display:inline-flex;align-items:center;gap:6px;background:rgba(0,201,167,.08);color:#055e50;border:1px solid rgba(0,201,167,.25);padding:6px 10px;border-radius:999px;font-weight:700}
+    .body{padding:16px}
+    .muted{color:var(--muted);font-size:12px}
+
+    .grid{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
+    .row-inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    label{display:block;font-size:12px;font-weight:600;color:#111;margin-bottom:6px}
+    input[type="text"],input[type="url"],select,textarea{
+      width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:14px/1.4 inherit
+    }
+    textarea{min-height:220px}
+
+    .btn{appearance:none;border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:#fff;cursor:pointer;font-weight:700;transition:all 0.2s}
+    .btn:hover{background:#f1f5f9;border-color:#cbd5e1}
+    .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+    .btn.primary:hover{background:#00b397;border-color:#00b397}
+    .btn.ghost{background:#f8fafc;color:#334155}
+    .btn.ghost:hover{background:#e2e8f0}
+    .btn.small{padding:6px 10px;font-size:12px}
+
+    .row-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px;background:#fff;position:relative}
+    .row-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:8px 10px;border-radius:10px;background:#f9fbfb;border:1px dashed rgba(0,201,167,.35)}
+    .row-title{display:flex;align-items:center;gap:8px}
+    .row-badge{background:var(--brand);color:#fff;padding:2px 8px;border-radius:999px;font-weight:700;font-size:12px}
+    .drag{cursor:grab; user-select:none; font-size:12px; color:#334155; border:1px dashed #cbd5e1; padding:4px 8px; border-radius:8px; background:#fff}
+    .drag:active{cursor:grabbing}
+
+    .cols{display:grid;gap:10px}
+    .col-card{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fcfefd;position:relative}
+    .col-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .col-badge{background:#eafff9;color:#055e50;border:1px solid rgba(0,201,167,.35);padding:2px 8px;border-radius:999px;font-weight:700;font-size:12px}
+    .col-quick{display:flex;gap:6px;align-items:center}
+    .chip{border:1px solid var(--line);border-radius:8px;padding:4px 8px;background:#fff;cursor:pointer;font-size:11px}
+
+    .preview{background:#f8fafc;border:1px dashed var(--line);border-radius:12px;overflow:auto;padding:10px}
+
+    .meter{display:inline-flex;align-items:center;gap:8px}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .dot.good{background:var(--good)}
+    .dot.warn{background:var(--warn)}
+    .dot.bad{background:var(--bad)}
+    .panel{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
+    .panel h3{margin:0 0 8px 0;font-size:13px}
+
+    .dragging{opacity:.4}
+    .drop-hint{outline:2px dashed var(--brand); outline-offset:4px; border-radius:10px}
+
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
-<div class="nmb">
-  <div class="card">
-    <h2>Marketing Email Builder</h2>
-    <div class="muted">
-      Images / GIF / Button / YouTube (thumb→link). No default padding; set Row/Column padding. Header/footer fixed; links get UTMs.
-    </div>
+  <div class="wrap">
+    <div class="card">
+      <div class="head">
+        <h1>Marketing Email Builder</h1>
+       
+      </div>
+      <div class="body">
 
-    <!-- UTMs + optional header color -->
-    <div class="grid" style="margin-top:8px;">
-      <div><label>utm_source</label><input id="utm_source" value="email"></div>
-      <div><label>utm_medium</label><input id="utm_medium" value="crm"></div>
-      <div><label>utm_campaign</label><input id="utm_campaign" value="promo_generic"></div>
-      <div><label>utm_content</label><input id="utm_content" value="hero_main"></div>
-      <div><label>utm_term (optional)</label><input id="utm_term" value=""></div>
-      <div><label>Header top color (hex, optional)</label><input id="hdr_color" placeholder="#00C9A7"></div>
-    </div>
+        <div class="grid" style="margin-bottom:8px">
+          <div>
+            <label>Subject <span class="muted" id="subject_count">(0)</span></label>
+            <input id="subject" type="text" placeholder="Compelling subject line">
+          </div>
+          <div class="row-inline" style="align-items:flex-end">
+            <div style="flex:1 1 auto">
+              <label>Preheader (hidden preview text) <span class="muted" id="pre_count">(0)</span></label>
+              <input id="preheader" type="text" placeholder="Short summary shown in inbox">
+            </div>
+            <div class="panel" style="flex:0 0 auto; margin-left:auto">
+              <div class="meter"><span id="size_light" class="dot good"></span><b id="size_label">Size:</b> <span id="size_bytes">0 B</span></div>
+              <div class="muted" style="margin-top:4px">Gmail may clip around ~100 KB.</div>
+            </div>
+          </div>
+        </div>
 
-    <!-- Optional hero -->
-    <div class="grid" style="margin-top:8px;">
-      <div><label>Hero image URL (optional)</label><input id="hero_url" type="url" placeholder="https://cdn.../hero.jpg"></div>
-      <div><label>Hero click URL (optional)</label><input id="hero_href" type="url" placeholder="https://www.netmeds.com/..."></div>
-    </div>
+        <p class="muted" style="margin:-4px 0 12px 0">No default padding; set <b>Row</b> and <b>Column</b> padding (px or CSS shorthand). Header/footer fixed. All links get UTMs.</p>
 
-    <!-- Controls -->
-    <div class="row" style="margin-top:10px;">
-      <button class="btn" id="add_row">+ Add Row</button>
-      <button class="btn ghost" id="gen">Generate</button>
-      <button class="btn ghost" id="copy">Copy Final HTML</button>
-      <button class="btn primary" id="download">Download .html</button>
-      <span class="muted">Preview (600px) below.</span>
-    </div>
+        <div class="grid">
+          <div><label>Header top color (hex, optional)</label><input id="hdr_color" placeholder="#00C9A7"></div>
+          <div class="row-inline" style="align-items:flex-end">
+            <div><label><input id="toggle_dark" type="checkbox"> Dark-mode preview</label></div>
+            <div><label><input id="toggle_img_off" type="checkbox"> Images-off preview</label></div>
+          </div>
 
-    <!-- Rows/Columns UI -->
-    <div id="rows_wrap" class="stack" style="margin-top:8px;"></div>
+          <div><label>utm_source</label><input id="utm_source" value="email"></div>
+          <div><label>utm_medium</label><input id="utm_medium" value="crm"></div>
+          <div><label>utm_campaign</label><input id="utm_campaign" value="promo_generic"></div>
+          <div><label>utm_content</label><input id="utm_content" value="hero_main"></div>
+          <div><label>utm_term (optional)</label><input id="utm_term" value=""></div>
+        </div>
 
-    <!-- Output -->
-    <div class="stack" style="margin-top:12px;">
-      <label>Final Email HTML (body-only)</label>
-      <textarea id="out_html" readonly style="min-height:220px;"></textarea>
-      <label>Live Preview</label>
-      <div id="preview" class="preview"></div>
+        <!-- Hero -->
+        <div class="grid" style="margin-top:8px;">
+          <div><label>Hero image URL (optional)</label><input id="hero_url" type="url" placeholder="https://cdn.../hero.jpg"></div>
+          <div><label>Hero click URL (optional)</label><input id="hero_href" type="url" placeholder="https://www.netmeds.com/..."></div>
+        </div>
+
+        <div class="row-inline" style="margin-top:12px">
+          <button class="btn" id="add_row">+ Add Row</button>
+          <span class="muted">Drag handle to reorder. Use quick actions on rows/cols.</span>
+        </div>
+
+        <div id="rows_wrap"></div>
+
+        <div class="row-inline" style="margin-top:18px;margin-bottom:6px">
+          <button class="btn ghost" id="gen">Generate</button>
+          <button class="btn ghost" id="copy">Copy Final HTML</button>
+          <button class="btn primary" id="download">Download .html</button>
+          <button class="btn" id="save">Save Template</button>
+          <button class="btn" id="load">Load Template</button>
+          <button class="btn" id="plain">Generate Plain-Text</button>
+          <button class="btn" id="links">Validate Links</button>
+        </div>
+
+        <div style="margin-top:6px">
+          <label><b>Final Email HTML</b></label>
+          <textarea id="out_html" readonly></textarea>
+
+          <div class="grid" style="margin-top:8px">
+            <div class="panel">
+              <h3>Plain-Text version</h3>
+              <textarea id="out_text" readonly style="min-height:160px"></textarea>
+            </div>
+            <div class="panel">
+              <h3>Link inspector</h3>
+              <div id="link_report" class="muted">Click “Validate Links” after Generate.</div>
+            </div>
+          </div>
+
+          <!-- Desktop preview -->
+          <div style="margin-top:8px">
+            <div class="muted" style="margin-bottom:6px"><b>Desktop preview</b></div>
+            <iframe id="preview_iframe" class="preview" style="width:100%;min-height:500px;border:0;background:#fff"></iframe>
+          </div>
+
+          <!-- Mobile preview (stacked below) -->
+          <div style="margin-top:12px">
+            <div class="muted" style="margin-bottom:6px"><b>Mobile preview (375px)</b></div>
+            <div style="border:1px solid var(--line);border-radius:12px;background:#fff;padding:0 6px 6px;max-width:390px">
+              <iframe id="preview_mobile_iframe" style="width:375px;max-width:100%;min-height:500px;border:0;background:#fff"></iframe>
+            </div>
+          </div>
+
+         
+        </div>
+
+      </div>
     </div>
   </div>
-</div>
 
-<script type="text/javascript">
-(function(){
-  function $(id){ return document.getElementById(id); }
-  function esc(s){ s=(s==null?"":String(s)); return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
-  function youThumb(url){
-    if(!url) return "";
-    var m = url.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/); if(m && m[1]) return "https://img.youtube.com/vi/"+m[1]+"/hqdefault.jpg";
-    m = url.match(/[?&]v=([A-Za-z0-9_-]{6,})/);         if(m && m[1]) return "https://img.youtube.com/vi/"+m[1]+"/hqdefault.jpg";
-    m = url.match(/\/(?:embed|v)\/([A-Za-z0-9_-]{6,})/);if(m && m[1]) return "https://img.youtube.com/vi/"+m[1]+"/hqdefault.jpg";
-    return "";
-  }
-  function withUTM(raw,utm){
-    if(!raw) return ""; if(!/^https?:\/\//i.test(raw)) return raw;
-    var out = raw + (raw.indexOf("?")!==-1 ? "&" : "?"); var first = true;
-    function add(k,v){ if(!v) return; if(!first) out += "&"; out += encodeURIComponent(k)+"="+encodeURIComponent(v); first=false; }
-    add("utm_source",utm.utm_source); add("utm_medium",utm.utm_medium); add("utm_campaign",utm.utm_campaign);
-    add("utm_content",utm.utm_content); add("utm_term",utm.utm_term); return out;
-  }
-
-  var rowsWrap = $("rows_wrap");
-
-  function addRow(){
-    var r = document.createElement("div");
-    r.className = "blk"; r.setAttribute("data-row","1");
-    r.innerHTML =
-      '<div class="row" style="justify-content:space-between;">' +
-        '<strong>Row</strong>' +
-        '<div class="row" style="gap:6px;">' +
-          '<label>Row padding (px)</label>' +
-          '<input type="text" data-rowpad placeholder="e.g., 0 or 16 8 16 8" style="width:200px">' +
-          '<button type="button" class="btn" data-addcol>+ Add Column</button>' +
-          '<button type="button" class="btn" data-removerow>Remove Row</button>' +
-        '</div>' +
-      '</div>' +
-      '<div class="row stack" data-cols></div>' +
-      '<div class="row" style="margin-top:6px;">' +
-        '<button type="button" class="btn" data-addrow>+ Add New Row Below</button>' +
-      '</div>';
-    r.querySelector("[data-addcol]").onclick = function(){ addCol(r); };
-    r.querySelector("[data-removerow]").onclick = function(){ r.remove(); };
-    r.querySelector("[data-addrow]").onclick   = function(){ r.after(addRow()); };
-    rowsWrap.appendChild(r);
-    return r;
-  }
-
-  function addCol(rowEl){
-    var c = document.createElement("div");
-    c.className = "blk";
-    c.innerHTML =
-      '<div class="row" style="justify-content:space-between;">' +
-        '<div class="row" style="gap:6px;">' +
-          '<label>Type</label>' +
-          '<select data-type>' +
-            '<option value="image">Image</option>' +
-            '<option value="gif">GIF</option>' +
-            '<option value="button">Button</option>' +
-            '<option value="youtube">YouTube</option>' +
-          '</select>' +
-          '<label>Column padding (px)</label>' +
-          '<input type="text" data-colpad placeholder="e.g., 0 or 8 8 8 8" style="width:160px">' +
-          '<label>Alignment</label>' +
-          '<select data-align>' +
-            '<option value="center" selected>Center</option>' +
-            '<option value="left">Left</option>' +
-            '<option value="right">Right</option>' +
-          '</select>' +
-        '</div>' +
-        '<button type="button" class="btn" data-removecol>Remove Column</button>' +
-      '</div>' +
-      '<div class="grid">' +
-        '<div><label>Value</label><input data-value type="text" placeholder="Image/GIF: image URL · Button: CTA text · YouTube: video URL"></div>' +
-        '<div><label>Link (optional for images/YouTube; REQUIRED for button)</label><input data-href type="url" placeholder="https://... (click URL)"></div>' +
-      '</div>' +
-      '<div class="grid">' +
-        '<div><label>Alt text (recommended)</label><input data-alt type="text" maxlength="150" placeholder="Describe the image"></div>' +
-        '<div><label>Width (px, optional)</label><input data-w type="text" placeholder="e.g., 260"></div>' +
-      '</div>';
-    c.querySelector("[data-removecol]").onclick = function(){ c.remove(); };
-    rowEl.querySelector("[data-cols]").appendChild(c);
-  }
-
-  $("add_row").onclick = function(){ addRow(); };
-  addRow();
-
-  function readRows(){
-    var out = [], rows = document.querySelectorAll(".blk[data-row]");
-    for(var i=0;i<rows.length;i++){
-      var row = rows[i];
-      var rowPad = (row.querySelector("[data-rowpad]") ? row.querySelector("[data-rowpad]").value : "").trim();
-      var cols = [], colNodes = row.querySelectorAll("[data-cols] > .blk");
-      for(var j=0;j<colNodes.length;j++){
-        var col = colNodes[j];
-        cols.push({
-          type:  col.querySelector("[data-type]").value,
-          value: col.querySelector("[data-value]").value.trim(),
-          href:  col.querySelector("[data-href]").value.trim(),
-          alt:   col.querySelector("[data-alt]").value.trim(),
-          w:     col.querySelector("[data-w]").value.trim(),
-          pad:   (col.querySelector("[data-colpad]") ? col.querySelector("[data-colpad]").value.trim() : ""),
-          align: (col.querySelector("[data-align]") ? col.querySelector("[data-align]").value.trim() : "center")
-        });
+  <script>
+  (function(){
+    try{
+      function $(id){ return document.getElementById(id); }
+      function esc(s){
+        s = (s==null?"":String(s));
+        return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+                .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
       }
-      out.push({ pad: rowPad, cols: cols });
-    }
-    return out;
-  }
-
-  function headerHTML(utm, overrideColor){
-    var bg = (overrideColor && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(overrideColor)) ? overrideColor : "#00C9A7";
-    var html = '';
-    html += '<table align="center" border="0" cellpadding="0" cellspacing="0" style="background-color:'+bg+'; width:100%; height:72px;"><tbody><tr>';
-    html +=   '<td style="width:20%; padding:12px 0 12px 14px;"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/headerLft.png"></td>';
-    html +=   '<td style="width:60%; padding:12px 0; text-align:center;"><a href="'+esc(withUTM("https://www.netmeds.com/",utm))+'" style="text-decoration:none;"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/netmeds-logo.png"></a></td>';
-    html +=   '<td style="width:20%; padding:12px 14px 12px 0;"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/headerRgt.png"></td>';
-    html += '</tr></tbody></table>';
-    return html;
-  }
-
-  function footerHTML(utm){
-    var html = '';
-    html += '<table align="center" border="0" cellpadding="0" cellspacing="0" style="font-family:Arial, Helvetica, sans-serif;background:#eeeeee;width:100%; padding:24px 32px 40px; border-bottom:1px solid rgb(205 205 205);"><tbody><tr><td>';
-    html +=   '<p style="color:#000;font-family:Arial Black;font-size:18px;font-style:normal;font-weight:900;line-height:normal;letter-spacing:-0.54px; margin:0; padding:0 0 24px;">Connect with us<br />';
-    html +=     '<a href="'+esc(withUTM("https://www.facebook.com/NetMeds",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 12px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-FB.png"></a>';
-    html +=     '<a href="'+esc(withUTM("https://twitter.com/NetMeds",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 12px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-Twitter.png"></a>';
-    html +=     '<a href="'+esc(withUTM("https://www.instagram.com/netmedsofficial",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 12px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-Instagram.png"></a>';
-    html +=     '<a href="'+esc(withUTM("https://youtube.com/@netmeds",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-Youtube.png"></a></p>';
-    html +=   '<p style="color:#000;font-family:Arial Black;font-size:18px;font-style:normal;font-weight:900;line-height:normal;letter-spacing:-0.54px; margin:0; padding:0;">Download the app<br />';
-    html +=     '<a href="'+esc(withUTM("https://play.google.com/store/apps/details?id=com.NetmedsMarketplace.Netmeds&hl=en",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 16px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-Android.png"></a>';
-    html +=     '<a href="'+esc(withUTM("https://itunes.apple.com/in/app/netmeds/id1011070011?mt=8",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-IOS.png"></a></p>';
-    html += '</td></tr></tbody></table>';
-
-    html += '<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;background:#eeeeee; padding:12px 32px; margin:0; border-bottom:1px solid rgb(205 205 205);"><tbody>';
-    html +=   '<tr><td style="color:rgba(11,18,25,0.5);text-align:left; padding:15px 0 0;  font-family:Arial; font-size:14px; font-style:normal;">© 2025 Netmeds Marketplace Limited. All Rights Reserved</td></tr>';
-    html +=   '<tr><td style="color:rgba(11,18,25,0.5);text-align:left; padding:15px 0 0;  font-family:Arial; font-size:14px; font-style:normal;"><a href="'+esc(withUTM("https://www.netmeds.tech/terms-and-conditions",utm))+'" style="color:#08332C;font-weight:700; line-height:18px; letter-spacing:-0.07px; text-decoration:none;">Terms &amp; Conditions</a></td></tr>';
-    html +=   '<tr><td style="padding:0;">' +
-                '<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"><tr>' +
-                  '<td style="text-align:left;"><p style="color:rgba(11,18,25,0.5);font-size:12px;"><a href="{{MANAGE_PREFERENCES_URL}}">Manage My Preferences</a></p></td>' +
-                  '<td style="text-align:right;"><p style="color:rgba(11,18,25,0.5);font-size:12px;"><a href="{{UNSUBSCRIBE_URL}}">Unsubscribe</a></p></td>' +
-                '</tr></table>' +
-              '</td></tr>';
-    html += '</tbody></table>';
-    return html;
-  }
-
-  function buildCellHTML(col, utm){
-    var wAttr = col.w ? (' width="'+ (Number(col.w)||col.w) +'"') : '';
-    if(col.type==="button"){
-      var text = col.value, href = col.href; if(!text||!href) return "";
-      return '<a href="'+esc(withUTM(href,utm))+'" style="background:#00C9A7;color:#ffffff;border-radius:999px;display:inline-block;padding:14px 22px;font:700 16px/16px Arial,Helvetica,sans-serif;text-decoration:none">'+esc(text)+'</a>';
-    }
-    if(col.type==="youtube"){
-      var thumb=youThumb(col.value)||"", link=col.href||col.value||"#", alt=col.alt||"Watch video"; if(!thumb) return "";
-      return '<a href="'+esc(withUTM(link,utm))+'"><img src="'+esc(thumb)+'"'+wAttr+' style="display:block;width:100%;height:auto;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" alt="'+esc(alt)+'"></a>';
-    }
-    var src=col.value||"", href2=col.href||"", alt2=col.alt||""; if(!src) return "";
-    var img='<img src="'+esc(src)+'"'+wAttr+' style="display:block;width:100%;height:auto;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" alt="'+esc(alt2)+'">';
-    return href2?('<a href="'+esc(withUTM(href2,utm))+'">'+img+'</a>'):img;
-  }
-
-  function buildContentHTML(rows, utm, hero){
-    var html = "";
-    if(hero.url){
-      html += '<tr><td style="font-size:0; line-height:0; padding:0; text-align:center;" align="center">';
-      if(hero.href){ html += '<a href="'+esc(withUTM(hero.href,utm))+'">'; }
-      html += '<img src="'+esc(hero.url)+'" width="600" style="display:block;width:100%;height:auto;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" alt="">';
-      if(hero.href){ html += '</a>'; }
-      html += '</td></tr>';
-    }
-    for(var i=0;i<rows.length;i++){
-      var row=rows[i]; if(!row.cols.length) continue;
-      var rowPad=(row.pad||"").trim(); var rowPadStyle='padding:'+(rowPad?esc(rowPad):'0')+';';
-      html += '<tr><td style="'+rowPadStyle+' font-size:0; line-height:0;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt;"><tr>';
-      var widthPct=Math.floor(100/row.cols.length);
-      for(var j=0;j<row.cols.length;j++){
-        var c=row.cols[j]; var pad=(c.pad||"").trim(); var padStyle='padding:'+(pad?esc(pad):'0')+';';
-        var align=(c.align||"center").toLowerCase(); var safeAlign=(align==="left"||align==="right")?align:"center";
-        html += '<td valign="top" align="'+safeAlign+'" style="'+padStyle+' width:'+widthPct+'%; font-size:0; line-height:0; text-align:'+safeAlign+';">'+buildCellHTML(c,utm)+'</td>';
+      function withUTM(raw,utm){
+        if(!raw) return "";
+        if(!/^https?:\/\//i.test(raw)) return raw;
+        var glue = raw.indexOf("?")!==-1 ? "&" : "?";
+        var params = [];
+        function add(k,v){ if(v) params.push(encodeURIComponent(k)+"="+encodeURIComponent(v)); }
+        add("utm_source",utm.utm_source);
+        add("utm_medium",utm.utm_medium);
+        add("utm_campaign",utm.utm_campaign);
+        add("utm_content",utm.utm_content);
+        add("utm_term",utm.utm_term);
+        return raw + (params.length? glue+params.join("&") : "");
       }
-      html += '</tr></table></td></tr>';
+      function setIframeHTML(id, html, opts){
+        var ifr = $(id);
+        if(!ifr) return;
+        ifr.onload = function(){
+          try{
+            var b = ifr.contentDocument && ifr.contentDocument.body;
+            if(b){ ifr.style.height = Math.max(500, b.scrollHeight + 20) + "px"; }
+          }catch(e){}
+        };
+        var h = injectPreviewStyles(html, opts||{});
+        ifr.srcdoc = h;
+      }
+      function injectPreviewStyles(html, opts){
+  var extra = '<style id="__preview_overrides__">';
+  // NEW: prevent horizontal scrolling inside preview
+  extra += 'html,body{margin:0;overflow-x:hidden} img{max-width:100% !important;height:auto !important}';
+  if(opts.dark){
+    extra += 'html,body{background:#111 !important;color:#e5e7eb !important} a{color:#93c5fd !important}';
+    extra += 'table{background:transparent !important}';
+  }
+  if(opts.imagesOff){
+    extra += 'img{display:none !important;visibility:hidden !important}';
+  }
+  extra += '</style>';
+  if(/<\/head>/i.test(html)){
+    return html.replace(/<\/head>/i, extra + '</head>');
+  }
+  return html.replace(/<body/i, '<head>'+extra+'</head><body');
+}
+
+
+      // --- UI state ---
+      var rowsWrap = $("rows_wrap");
+
+      function renumberColumns(rowEl){
+        var cols = rowEl.querySelectorAll("[data-col]");
+        for(var i=0;i<cols.length;i++){
+          var badge = cols[i].querySelector(".col-badge");
+          if(badge) badge.textContent = "Column " + (i+1);
+        }
+      }
+
+      function onTypeChange(colEl){
+        var typeSel = colEl.querySelector("[data-type]");
+        var textOnlyBlock = colEl.querySelector("[data-textonly]");
+        if(!typeSel || !textOnlyBlock) return;
+        var v = typeSel.value;
+        textOnlyBlock.style.display = (v==="text") ? "" : "none";
+        var val = colEl.querySelector("[data-value]");
+        var href = colEl.querySelector("[data-href]");
+        if(v==="text"){
+          if(val) val.placeholder = "Enter text content";
+          if(href) href.placeholder = "(optional) not used for text";
+        }else if(v==="button"){
+          if(val) val.placeholder = "CTA text";
+          if(href) href.placeholder = "https://... (REQUIRED for button)";
+        }else{
+          if(val) val.placeholder = "Image/GIF: image URL";
+          if(href) href.placeholder = "(optional) click URL";
+        }
+      }
+
+      // --- Row/Col creation ---
+      function rowActionsHTML(){
+        return ''+
+          '<div class="row-inline">'+
+            '<span class="drag" draggable="true" data-drag="row">≡ Drag Row</span>'+
+            '<button class="btn small" data-action="row-addcol-1">+1 col</button>'+
+            '<button class="btn small" data-action="row-addcol-2">+2 cols</button>'+
+            '<button class="btn small" data-action="row-addcol-3">+3 cols</button>'+
+            '<span class="muted" style="margin-left:6px">All cols:</span>'+
+            '<select data-rowalign style="padding:6px 8px;border:1px solid var(--line);border-radius:8px"><option>center</option><option>left</option><option>right</option></select>'+
+            '<button class="btn small" data-action="row-copypad">Copy first col padding → all</button>'+
+          '</div>'+
+          '<div class="row-inline">'+
+            '<button class="btn small" data-action="row-up">▲ Up</button>'+
+            '<button class="btn small" data-action="row-down">▼ Down</button>'+
+            '<button class="btn small" data-action="row-dup">Duplicate</button>'+
+            '<button class="btn small" data-action="row-remove">Remove</button>'+
+          '</div>';
+      }
+
+      function addRow(){
+        var r = document.createElement("div");
+        r.className = "row-card";
+        r.setAttribute("data-row","1");
+        r.innerHTML =
+          '<div class="row-bar">' +
+            '<div class="row-title">' +
+              '<span class="row-badge">Row</span>' +
+              '<div class="row-inline">' +
+                '<label style="margin:0">Row padding</label>' +
+                '<input type="text" data-rowpad placeholder="e.g., 0 or 16 8 16 8" style="width:220px">' +
+              '</div>' +
+            '</div>' +
+            rowActionsHTML() +
+          '</div>' +
+          '<div class="cols" data-cols></div>';
+        rowsWrap.appendChild(r);
+        return r;
+      }
+
+      function colActionsHTML(){
+        return ''+
+          '<div class="col-quick">'+
+            '<span class="drag" draggable="true" data-drag="col">↕ Drag</span>'+
+            '<span class="chip" data-action="col-left">←</span>'+
+            '<span class="chip" data-action="col-right">→</span>'+
+            '<span class="chip" data-action="col-dup">Copy</span>'+
+            '<span class="chip" data-action="col-remove">Del</span>'+
+            '<span class="chip" data-action="col-align" data-val="left">L</span>'+
+            '<span class="chip" data-action="col-align" data-val="center">C</span>'+
+            '<span class="chip" data-action="col-align" data-val="right">R</span>'+
+            '<span class="chip" data-action="col-pad-to-all">Pad → all</span>'+
+          '</div>';
+      }
+
+      function addCol(rowEl){
+        var c = document.createElement("div");
+        c.className = "col-card";
+        c.setAttribute("data-col","1");
+        c.innerHTML =
+          '<div class="col-title">' +
+            '<span class="col-badge">Column</span>' +
+            colActionsHTML() +
+          '</div>' +
+
+          '<div class="row-inline">' +
+            '<div style="min-width:180px;flex:1 1 220px">' +
+              '<label>Type</label>' +
+              '<select data-type>' +
+                '<option value="image">Image</option>' +
+                '<option value="gif">GIF</option>' +
+                '<option value="button">Button</option>' +
+                '<option value="text">Text</option>' +
+              '</select>' +
+            '</div>' +
+            '<div style="min-width:180px;flex:1 1 220px">' +
+              '<label>Alignment</label>' +
+              '<select data-align>' +
+                '<option value="center" selected>Center</option>' +
+                '<option value="left">Left</option>' +
+                '<option value="right">Right</option>' +
+              '</select>' +
+            '</div>' +
+            '<div style="min-width:220px;flex:2 1 280px">' +
+              '<label>Column padding (px or CSS)</label>' +
+              '<input type="text" data-colpad placeholder="e.g., 0 or 8 8 8 8">' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="grid" style="margin-top:8px">' +
+            '<div>' +
+              '<label>Value</label>' +
+              '<input data-value type="text" placeholder="Image/GIF: image URL · Button: CTA text · Text: content">' +
+            '</div>' +
+            '<div>' +
+              '<label>Link (optional for images; REQUIRED for button)</label>' +
+              '<input data-href type="url" placeholder="https://... (click URL)">' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="grid" style="margin-top:8px">' +
+            '<div><label>Alt text (images only)</label><input data-alt type="text" maxlength="150" placeholder="Describe the image"></div>' +
+            '<div><label>Width (px, optional for images)</label><input data-w type="text" placeholder="e.g., 260"></div>' +
+          '</div>' +
+
+          '<div data-textonly style="display:none;margin-top:8px">' +
+            '<div class="row-inline" style="gap:12px">' +
+              '<div style="min-width:160px;flex:1 1 200px">' +
+                '<label>Text style</label>' +
+                '<select data-textkind>' +
+                  '<option value="p" selected>Paragraph</option>' +
+                  '<option value="h1">H1</option>' +
+                  '<option value="h2">H2</option>' +
+                  '<option value="h3">H3</option>' +
+                '</select>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        rowEl.querySelector("[data-cols]").appendChild(c);
+        var typeSel = c.querySelector("[data-type]");
+        typeSel.onchange = function(){ onTypeChange(c); };
+        onTypeChange(c);
+        return c;
+      }
+
+      // initial row
+      $("add_row").onclick = function(){ var r=addRow(); return r; };
+      addRow();
+
+      // --- Read/Populate ---
+      function readRows(){
+        var out = [];
+        var rowEls = rowsWrap.querySelectorAll("[data-row]");
+        for(var i=0;i<rowEls.length;i++){
+          var row = rowEls[i];
+          var rowPad = (row.querySelector("[data-rowpad]") ? row.querySelector("[data-rowpad]").value : "").trim();
+          var cols = [];
+          var colEls = row.querySelectorAll("[data-cols] > [data-col]");
+          for(var j=0;j<colEls.length;j++){
+            var col = colEls[j];
+            cols.push({
+              type:  col.querySelector("[data-type]").value,
+              value: col.querySelector("[data-value]").value.trim(),
+              href:  col.querySelector("[data-href]").value.trim(),
+              alt:   col.querySelector("[data-alt]").value.trim(),
+              w:     col.querySelector("[data-w]").value.trim(),
+              pad:   (col.querySelector("[data-colpad]") ? col.querySelector("[data-colpad]").value.trim() : ""),
+              align: (col.querySelector("[data-align]") ? col.querySelector("[data-align]").value.trim() : "center"),
+              textkind: (col.querySelector("[data-textkind]") ? col.querySelector("[data-textkind]").value : "p")
+            });
+          }
+          out.push({ pad: rowPad, cols: cols });
+        }
+        return out;
+      }
+
+      function populateRows(rows){
+        rowsWrap.innerHTML = "";
+        for(var i=0;i<rows.length;i++){
+          var r = addRow();
+          r.querySelector("[data-rowpad]").value = rows[i].pad || "";
+          for(var j=0;j<rows[i].cols.length;j++){
+            var c = addCol(r);
+            var data = rows[i].cols[j];
+            c.querySelector("[data-type]").value = data.type || "image";
+            onTypeChange(c);
+            c.querySelector("[data-value]").value = data.value || "";
+            c.querySelector("[data-href]").value = data.href || "";
+            c.querySelector("[data-alt]").value = data.alt || "";
+            c.querySelector("[data-w]").value   = data.w || "";
+            c.querySelector("[data-colpad]").value = data.pad || "";
+            var a = c.querySelector("[data-align]");
+            if(a) a.value = data.align||"center";
+            var tk = c.querySelector("[data-textkind]");
+            if(tk) tk.value = data.textkind||"p";
+          }
+          renumberColumns(r);
+        }
+      }
+
+      // --- Row/Column quick actions (delegated) ---
+      rowsWrap.addEventListener('click', function(e){
+        var btn = e.target.closest('[data-action]');
+        if(!btn) return;
+        var action = btn.getAttribute('data-action');
+        var row = e.target.closest('[data-row]');
+        var col = e.target.closest('[data-col]');
+
+        function moveNodeLeft(el){
+          if(!el || !el.previousElementSibling) return;
+          el.parentNode.insertBefore(el, el.previousElementSibling);
+        }
+        function moveNodeRight(el){
+          if(!el || !el.nextElementSibling) return;
+          el.parentNode.insertBefore(el.nextElementSibling, el);
+        }
+        function duplicateNode(el){
+          var clone = el.cloneNode(true);
+          el.parentNode.insertBefore(clone, el.nextElementSibling);
+        }
+
+        switch(action){
+          // row actions
+          case 'row-up': if(row) moveNodeLeft(row); break;
+          case 'row-down': if(row) moveNodeRight(row); break;
+          case 'row-dup': if(row){ duplicateNode(row); } break;
+          case 'row-remove': if(row){ row.remove(); } break;
+          case 'row-addcol-1': if(row){ addCol(row); renumberColumns(row); } break;
+          case 'row-addcol-2': if(row){ addCol(row); addCol(row); renumberColumns(row); } break;
+          case 'row-addcol-3': if(row){ addCol(row); addCol(row); addCol(row); renumberColumns(row); } break;
+          case 'row-copypad':
+            if(row){
+              var first = row.querySelector('[data-col]');
+              if(first){
+                var pad = (first.querySelector('[data-colpad]')||{}).value || '';
+                row.querySelectorAll('[data-colpad]').forEach(function(i){ i.value = pad; });
+              }
+            }
+            break;
+
+          // column actions
+          case 'col-left': if(col){ moveNodeLeft(col); renumberColumns(col.closest('[data-row]')); } break;
+          case 'col-right': if(col){ moveNodeRight(col); renumberColumns(col.closest('[data-row]')); } break;
+          case 'col-dup': if(col){ duplicateNode(col); renumberColumns(col.closest('[data-row]')); } break;
+          case 'col-remove': if(col){ var r=col.closest('[data-row]'); col.remove(); renumberColumns(r); } break;
+          case 'col-align':
+            if(col){
+              var v = btn.getAttribute('data-val')||'center';
+              var a = col.querySelector('[data-align]'); if(a) a.value = v;
+            }
+            break;
+          case 'col-pad-to-all':
+            if(col){
+              var pad = (col.querySelector('[data-colpad]')||{}).value || '';
+              var rowNode = col.closest('[data-row]');
+              rowNode.querySelectorAll('[data-colpad]').forEach(function(i){ i.value = pad; });
+            }
+            break;
+        }
+      });
+
+      // Row "align all" change
+      rowsWrap.addEventListener('change', function(e){
+        if(e.target && e.target.matches('[data-rowalign]')){
+          var row = e.target.closest('[data-row]');
+          var v = (e.target.value||'center').toLowerCase();
+          row.querySelectorAll('[data-align]').forEach(function(sel){ sel.value = v; });
+        }
+      });
+
+      // --- Drag & Drop (rows + columns) ---
+      var dragEl = null;
+      rowsWrap.addEventListener('dragstart', function(e){
+        var handle = e.target.closest('[data-drag]');
+        if(!handle) return;
+        dragEl = handle.closest(handle.getAttribute('data-drag')==='row' ? '[data-row]' : '[data-col]');
+        if(dragEl){ dragEl.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+      });
+      rowsWrap.addEventListener('dragend', function(){ if(dragEl){ dragEl.classList.remove('dragging'); dragEl=null; } });
+
+      rowsWrap.addEventListener('dragover', function(e){
+        if(!dragEl) return;
+        var isRow = dragEl.hasAttribute('data-row');
+        var sel = isRow ? '[data-row]' : '[data-col]';
+        var over = e.target.closest(sel);
+        if(!over || over===dragEl) return;
+        e.preventDefault();
+        over.classList.add('drop-hint');
+        var rect = over.getBoundingClientRect();
+        var before = (isRow ? (e.clientY - rect.top) < rect.height/2 : (e.clientX - rect.left) < rect.width/2);
+        if(before){
+          over.parentNode.insertBefore(dragEl, over);
+        }else{
+          over.parentNode.insertBefore(dragEl, over.nextElementSibling);
+        }
+        if(!isRow){ renumberColumns(dragEl.closest('[data-row]')); }
+      });
+      rowsWrap.addEventListener('dragleave', function(e){
+        var n = e.target.closest('.drop-hint'); if(n) n.classList.remove('drop-hint');
+      });
+      rowsWrap.addEventListener('drop', function(e){
+        var hints = rowsWrap.querySelectorAll('.drop-hint'); hints.forEach(function(n){ n.classList.remove('drop-hint'); });
+      });
+
+      // --- Email HTML generation (unchanged core) ---
+      function headerHTML(utm, overrideColor){
+        var bg = (overrideColor && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(overrideColor)) ? overrideColor : "#00C9A7";
+        var h = '';
+        h += '<table align="center" border="0" cellpadding="0" cellspacing="0" style="background-color:'+bg+'; width:100%; height:72px;"><tbody><tr>';
+        h +=   '<td style="width:20%; padding:12px 0 12px 14px;"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/headerLft.png" alt=""></td>';
+        h +=   '<td style="width:60%; padding:12px 0; text-align:center;"><a href="'+esc(withUTM("https://www.netmeds.com/",utm))+'" style="text-decoration:none;"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/netmeds-logo.png" alt="Netmeds"></a></td>';
+        h +=   '<td style="width:20%; padding:12px 14px 12px 0;"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/headerRgt.png" alt=""></td>';
+        h += '</tr></tbody></table>';
+        return h;
+      }
+
+      function footerHTML(utm){
+        var f = '';
+        f += '<table align="center" border="0" cellpadding="0" cellspacing="0" style="font-family:Arial, Helvetica, sans-serif;background:#eeeeee;width:100%; padding:24px 32px 40px; border-bottom:1px solid rgb(205 205 205);"><tbody><tr><td>';
+        f +=   '<p style="color:#000;font-family:Arial Black;font-size:18px;font-style:normal;font-weight:900;line-height:normal;letter-spacing:-0.54px; margin:0; padding:0 0 24px;">Connect with us<br />';
+        f +=     '<a href="'+esc(withUTM("https://www.facebook.com/NetMeds",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 12px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-FB.png" alt="Facebook"></a>';
+        f +=     '<a href="'+esc(withUTM("https://twitter.com/NetMeds",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 12px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-Twitter.png" alt="Twitter"></a>';
+        f +=     '<a href="'+esc(withUTM("https://www.instagram.com/netmedsofficial",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 12px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-Instagram.png" alt="Instagram"></a></p>';
+        f +=   '<p style="color:#000;font-family:Arial Black;font-size:18px;font-style:normal;font-weight:900;line-height:normal;letter-spacing:-0.54px; margin:0; padding:0;">Download the app<br />';
+        f +=     '<a href="'+esc(withUTM("https://play.google.com/store/apps/details?id=com.NetmedsMarketplace.Netmeds&hl=en",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 16px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-Android.png" alt="Android"></a>';
+        f +=     '<a href="'+esc(withUTM("https://itunes.apple.com/in/app/netmeds/id1011070011?mt=8",utm))+'" style="text-decoration:none;vertical-align:middle; display:inline-block; margin:16px 0 0;" target="_blank"><img src="https://cdn.pixelbin.io/v2/plain-cake-860195/original/Communication/2023/nov/email/orderplaced/icon-IOS.png" alt="iOS"></a></p>';
+        f += '</td></tr></tbody></table>';
+        f += '<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;background:#eeeeee; padding:12px 32px; margin:0; border-bottom:1px solid rgb(205 205 205);"><tbody>';
+        f +=   '<tr><td style="color:rgba(11,18,25,0.5);text-align:left; padding:15px 0 0;  font-family:Arial; font-size:14px; font-style:normal;">© 2025 Netmeds Marketplace Limited. All Rights Reserved</td></tr>';
+        f +=   '<tr><td style="color:rgba(11,18,25,0.5);text-align:left; padding:15px 0 0;  font-family:Arial; font-size:14px; font-style:normal;"><a href="'+esc(withUTM("https://www.netmeds.com/terms-and-conditions",utm))+'" style="color:#08332C;font-weight:700; line-height:18px; letter-spacing:-0.07px; text-decoration:none;">Terms &amp; Conditions</a></td></tr>';
+        f +=   '<tr><td style="padding:0;"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"><tr>';
+        f +=       '<td style="text-align:left;"><p style="color:rgba(11,18,25,0.5);font-size:12px;"><a href="{{MANAGE_PREFERENCES_URL}}">Manage My Preferences</a></p></td>';
+        f +=       '<td style="text-align:right;"><p style="color:rgba(11,18,25,0.5);font-size:12px;"><a href="{{UNSUBSCRIBE_URL}}">Unsubscribe</a></p></td>';
+        f +=     '</tr></table></td></tr></tbody></table>';
+        return f;
+      }
+
+      function nl2br(s){ return s.replace(/\r\n|\n\r|\r|\n/g, "<br>"); }
+      function buildTextHTML(kind, raw){
+        var t = esc(raw);
+        if(kind==="h1") return '<h1 style="margin:0;padding:0;font-family:Arial, Helvetica, sans-serif;color:#0b111a;font-size:28px;line-height:34px">'+ t +'</h1>';
+        if(kind==="h2") return '<h2 style="margin:0;padding:0;font-family:Arial, Helvetica, sans-serif;color:#0b111a;font-size:22px;line-height:28px">'+ t +'</h2>';
+        if(kind==="h3") return '<h3 style="margin:0;padding:0;font-family:Arial, Helvetica, sans-serif;color:#0b111a;font-size:18px;line-height:24px">'+ t +'</h3>';
+        return '<p style="margin:0;padding:0;font-family:Arial, Helvetica, sans-serif;color:#0b111a;font-size:14px;line-height:20px">'+ nl2br(t) +'</p>';
+      }
+
+      function buildCellHTML(col, utm){
+        var wAttr = col.w ? (' width="'+ (Number(col.w)||col.w) +'"') : '';
+        if(col.type==="button"){
+          var text = col.value;
+          var href = col.href;
+          if(!text || !href) return "";
+          return '<a href="'+ esc(withUTM(href,utm)) +'" ' +
+                 'style="background:#00C9A7;color:#ffffff;border-radius:999px;display:inline-block;padding:14px 22px;font:700 16px/16px Arial,Helvetica,sans-serif;text-decoration:none">' +
+                 esc(text) + '</a>';
+        }
+        if(col.type==="text"){
+          var kind = (col.textkind||"p");
+          var content = col.value || "";
+          return buildTextHTML(kind, content);
+        }
+        var src  = col.value || "";
+        var href2 = col.href || "";
+        var alt2  = col.alt  || "";
+        if(!src) return "";
+        var img = '<img src="'+ esc(src) +'"'+ wAttr +
+                  ' style="display:block;width:100%;height:auto;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic"' +
+                  ' alt="'+ esc(alt2) +'">';
+        return href2 ? ('<a href="'+ esc(withUTM(href2,utm)) +'">'+ img +'</a>') : img;
+      }
+
+      function buildContentHTML(rows, utm, hero){
+        var html = "";
+        if(hero.url){
+          html += '<tr><td style="font-size:0; line-height:0; padding:0; text-align:center;" align="center">';
+          if(hero.href){ html += '<a href="'+ esc(withUTM(hero.href,utm)) +'">'; }
+          html += '<img src="'+ esc(hero.url) +'" width="600" style="display:block;width:100%;height:auto;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic" alt="">';
+          if(hero.href){ html += '</a>'; }
+          html += '</td></tr>';
+        }
+        for(var i=0;i<rows.length;i++){
+          var row = rows[i];
+          if(!row.cols.length) continue;
+          var rowPadStyle = 'padding:' + ((row.pad!=="") ? esc(row.pad) : '0') + ';';
+          html += '<tr><td style="'+ rowPadStyle +' font-size:0; line-height:0;">' +
+                  '<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" ' +
+                  'style="border-collapse:collapse; border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt;"><tr>';
+          var widthPct = Math.floor(100/row.cols.length);
+          for(var j=0;j<row.cols.length;j++){
+            var c = row.cols[j];
+            var padStyle = 'padding:' + ((c.pad!=="") ? esc(c.pad) : '0') + ';';
+            var align = (c.align||"center").toLowerCase();
+            var safeAlign = (align==="left"||align==="right") ? align : "center";
+            html += '<td valign="top" align="'+ safeAlign +'" ' +
+                    'style="'+ padStyle +' width:'+ widthPct +'%; font-size:0; line-height:0; text-align:'+ safeAlign +';">' +
+                      buildCellHTML(c, utm) + '</td>';
+          }
+          html += '</tr></table></td></tr>';
+        }
+        return html;
+      }
+
+      function readUTM(){
+        return {
+          utm_source: $("utm_source").value.trim(),
+          utm_medium: $("utm_medium").value.trim(),
+          utm_campaign: $("utm_campaign").value.trim(),
+          utm_content: $("utm_content").value.trim(),
+          utm_term: $("utm_term").value.trim()
+        };
+      }
+
+      function buildFullHTML(){
+        var utm = readUTM();
+        var hero = { url: $("hero_url").value.trim(), href: $("hero_href").value.trim() };
+        var rows = readRows();
+        var hdrColor = $("hdr_color").value.trim();
+        var preH = $("preheader").value.trim();
+        var subject = $("subject").value.trim();
+
+        var preheaderHTML = '';
+        if(preH){
+          preheaderHTML += '<div style="display:none;visibility:hidden;mso-hide:all;font-size:1px;line-height:1px;max-height:0;opacity:0;overflow:hidden;">'+ esc(preH) +'</div>';
+          preheaderHTML += '<div style="display:none;visibility:hidden;mso-hide:all;font-size:1px;line-height:1px;max-height:0;opacity:0;overflow:hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>';
+        }
+
+        var bodyHTML = '';
+        bodyHTML += preheaderHTML;
+        bodyHTML += '<table align="center" border="0" cellpadding="0" cellspacing="0" ' +
+                    'style="margin:0 auto; font-family:Arial, Helvetica, sans-serif; max-width:600px; width:100%;' +
+                    'border-collapse:collapse; border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt;"><tbody>';
+        bodyHTML +=   '<tr><td style="background-color:#ffffff; padding:0; font-size:0; line-height:0;">';
+        bodyHTML +=     headerHTML(utm, hdrColor);
+        bodyHTML +=     '<table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%" ' +
+                'style="max-width:600px; background:#ffffff; text-align:left;' +
+                       'border-collapse:collapse; border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt;"><tbody>';
+        bodyHTML +=       buildContentHTML(rows, utm, hero);
+        bodyHTML +=     '</tbody></table>';
+        bodyHTML +=     footerHTML(utm);
+        bodyHTML +=     '<table align="center" border="0" cellpadding="0" cellspacing="0" ' +
+                        'style="border-collapse:collapse; border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt;"></table>';
+        bodyHTML +=   '</td></tr></tbody></table>';
+
+        var full = '';
+        full += '<!doctype html>\n<html>\n<head>\n';
+        full += '  <meta charset="utf-8">\n';
+        full += '  <meta name="x-apple-disable-message-reformatting">\n';
+        full += '  <meta name="viewport" content="width=device-width, initial-scale=1">\n';
+        full += '  <title>'+ esc(subject || 'Netmeds Email') +'</title>\n';
+        full += '</head>\n<body bgcolor="#ffffff" style="margin:0;padding:0;background-color:#ffffff;">\n';
+        full += bodyHTML + '\n</body>\n</html>';
+        return full;
+      }
+
+      function textFromHTML(html){
+        try{
+          var s = html;
+          s = s.replace(/<br\s*\/?>/gi, '\n');
+          s = s.replace(/<\/(p|h1|h2|h3|li|tr|table)>/gi, '\n');
+          s = s.replace(/<style[\s\S]*?<\/style>/gi,'');
+          s = s.replace(/<script[\s\S]*?<\/script>/gi,'');
+          s = s.replace(/<\/?[^>]+>/g,'');
+          s = s.replace(/\u00A0/g,' ').replace(/[ \t]+\n/g,'\n');
+          s = s.replace(/\n{3,}/g,'\n\n').trim();
+          var ta = document.createElement('textarea');
+          ta.innerHTML = s;
+          return ta.value;
+        }catch(e){ return ''; }
+      }
+
+      function updateCounters(){
+        $("subject_count").textContent = '(' + ($("subject").value||'').length + ')';
+        $("pre_count").textContent = '(' + ($("preheader").value||'').length + ')';
+      }
+      $("subject").oninput = updateCounters;
+      $("preheader").oninput = updateCounters;
+
+      function updateSizeMeter(html){
+        var bytes = 0;
+        try{
+          if(window.TextEncoder){
+            bytes = new TextEncoder().encode(html).length;
+          }else{
+            bytes = unescape(encodeURIComponent(html)).length;
+          }
+        }catch(e){}
+        $("size_bytes").textContent = bytes.toLocaleString() + ' B';
+        var dot = $("size_light");
+        dot.className = 'dot ' + (bytes < 85000 ? 'good' : (bytes < 102000 ? 'warn' : 'bad'));
+        $("size_label").textContent = (bytes < 85000 ? 'Size:' : (bytes < 102000 ? 'Close to clipping:' : 'Likely clipped:'));
+      }
+
+      function validateLinksFromHTML(html){
+        var list = [];
+        var re = /href\s*=\s*"(.*?)"/gi, m;
+        while((m = re.exec(html))!==null){ list.push(m[1]); }
+        var out = [];
+        for(var i=0;i<list.length;i++){
+          var u = list[i], issues=[];
+          if(!/^https?:\/\//i.test(u)) issues.push('no-protocol');
+          if(/netmeds\.com/i.test(u) && u.indexOf('utm_')===-1) issues.push('no-utm');
+          out.push({url:u, issues:issues});
+        }
+        return out;
+      }
+
+      function renderLinkReport(rows){
+        var el = $("link_report");
+        if(!rows.length){ el.innerHTML = '<span class="muted">No links found.</span>'; return; }
+        var html = '<ol style="margin:0;padding-left:18px;font-size:12px">';
+        for(var i=0;i<rows.length;i++){
+          var r = rows[i];
+          var tag = r.issues.length ? (' <b style="color:#b91c1c">['+ r.issues.join(', ') +']</b>') : ' <span style="color:#059669">[ok]</span>';
+          html += '<li style="margin:4px 0;word-break:break-all">'+ esc(r.url) + tag +'</li>';
+        }
+        html += '</ol>';
+        el.innerHTML = html;
+      }
+
+      function saveTemplate(){
+        var data = {
+          subject: $("subject").value.trim(),
+          preheader: $("preheader").value.trim(),
+          hdr_color: $("hdr_color").value.trim(),
+          utm: readUTM(),
+          hero_url: $("hero_url").value.trim(),
+          hero_href: $("hero_href").value.trim(),
+          rows: readRows()
+        };
+        localStorage.setItem("netmeds_email_template", JSON.stringify(data));
+        alert("Saved!");
+      }
+      function loadTemplate(){
+        var raw = localStorage.getItem("netmeds_email_template");
+        if(!raw){ alert("No saved template found."); return; }
+        try{
+          var data = JSON.parse(raw);
+          $("subject").value = data.subject || "";
+          $("preheader").value = data.preheader || "";
+          $("hdr_color").value = data.hdr_color || "";
+          if(data.utm){
+            $("utm_source").value = data.utm.utm_source||"";
+            $("utm_medium").value = data.utm.utm_medium||"";
+            $("utm_campaign").value = data.utm.utm_campaign||"";
+            $("utm_content").value = data.utm.utm_content||"";
+            $("utm_term").value = data.utm.utm_term||"";
+          }
+          $("hero_url").value = data.hero_url || "";
+          $("hero_href").value = data.hero_href || "";
+          populateRows(data.rows||[]);
+          updateCounters();
+          alert("Loaded!");
+        }catch(e){ alert("Load failed: " + e.message); }
+      }
+
+      function currentPreviewOpts(){
+        return { dark: $("toggle_dark").checked, imagesOff: $("toggle_img_off").checked };
+      }
+      $("toggle_dark").onchange = function(){ if($("out_html").value){ setIframeHTML("preview_iframe", $("out_html").value, currentPreviewOpts()); setIframeHTML("preview_mobile_iframe", $("out_html").value, currentPreviewOpts()); } };
+      $("toggle_img_off").onchange = function(){ if($("out_html").value){ setIframeHTML("preview_iframe", $("out_html").value, currentPreviewOpts()); setIframeHTML("preview_mobile_iframe", $("out_html").value, currentPreviewOpts()); } };
+
+      function generate(){
+        var html = buildFullHTML();
+        $("out_html").value = html;
+        updateSizeMeter(html);
+        setIframeHTML("preview_iframe", html, currentPreviewOpts());
+        setIframeHTML("preview_mobile_iframe", html, currentPreviewOpts());
+      }
+      $("gen").onclick = generate;
+
+      $("plain").onclick = function(){
+        if(!$("out_html").value.trim()) generate();
+        $("out_text").value = textFromHTML($("out_html").value);
+      };
+
+      $("links").onclick = function(){
+        if(!$("out_html").value.trim()) generate();
+        var rows = validateLinksFromHTML($("out_html").value);
+        renderLinkReport(rows);
+      };
+
+      $("copy").onclick = function(){
+        if(!$("out_html").value.trim()) generate();
+        var v = $("out_html").value;
+        try{
+          if(navigator.clipboard && navigator.clipboard.writeText){
+            navigator.clipboard.writeText(v);
+          }else{
+            $("out_html").focus(); $("out_html").select();
+            document.execCommand("copy");
+          }
+          var b=$("copy"), t=b.textContent; b.textContent="Copied ✓";
+          setTimeout(function(){ b.textContent=t; },1200);
+        }catch(e){
+          alert("Copy failed. Please select the text and press Ctrl/Cmd+C.");
+        }
+      };
+
+      $("download").onclick = function(){
+        if(!$("out_html").value.trim()) generate();
+        var blob = new Blob([ $("out_html").value ], {type: "text/html;charset=utf-8"});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url; a.download = "netmeds-email.html";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 1200);
+      };
+
+      $("save").onclick = saveTemplate;
+      $("load").onclick = loadTemplate;
+
+      // init counters
+      updateCounters();
+
+    }catch(err){
+      console.error("Email Builder Error:", err);
+      alert("An error occurred while initializing the email builder. Please check the console for details.");
     }
-    return html;
-  }
-
-  function readUTM(){
-    return {
-      utm_source: $("utm_source").value.trim(),
-      utm_medium: $("utm_medium").value.trim(),
-      utm_campaign: $("utm_campaign").value.trim(),
-      utm_content: $("utm_content").value.trim(),
-      utm_term: $("utm_term").value.trim()
-    };
-  }
-
-  function buildBodyHTML(){
-    var utm = readUTM();
-    var hero = { url: $("hero_url").value.trim(), href: $("hero_href").value.trim() };
-    var rows = readRows();
-    var hdrColor = $("hdr_color").value.trim();
-
-    var html = '';
-    html += '<table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:0 auto; font-family:Arial, Helvetica, sans-serif; max-width:600px; width:100%;border-collapse:collapse; border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt;"><tbody>';
-    html +=   '<tr><td style="background-color:#ffffff; padding:0; font-size:0; line-height:0;">';
-    html +=     headerHTML(utm, hdrColor);
-    html +=     '<table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background:#ffffff; text-align:left;border-collapse:collapse; border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt;"><tbody>';
-    html +=       buildContentHTML(rows, utm, hero);
-    html +=     '</tbody></table>';
-    html +=     footerHTML(utm);
-    html +=     '<table align="center" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt;"></table>';
-    html +=   '</td></tr></tbody></table>';
-    return html;
-  }
-
-  function generate(){ var html=buildBodyHTML(); $("out_html").value=html; $("preview").innerHTML=html; }
-  $("gen").onclick = generate;
-
-  $("copy").onclick = function(){
-    var v = $("out_html").value; if(!v) return;
-    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(v); }
-    else { $("out_html").select(); try{ document.execCommand("copy"); }catch(e){} }
-    var b=$("copy"), t=b.textContent; b.textContent="Copied ✓"; setTimeout(function(){ b.textContent=t; }, 1200);
-  };
-
-  // Download via data URI (no Blob/URL apis)
-  $("download").onclick = function(){
-    if(!$("out_html").value.trim()) generate();
-    var body = $("out_html").value;
-    var full = '<!doctype html>\n<html>\n<head>\n  <meta charset="utf-8">\n  <meta name="x-apple-disable-message-reformatting">\n  <meta name="viewport" content="width=device-width, initial-scale=1">\n  <title>Netmeds Email</title>\n</head>\n<body bgcolor="#ffffff" style="margin:0;padding:0;background-color:#ffffff;">\n' + body + '\n</body>\n</html>';
-    var uri = "data:text/html;charset=utf-8," + encodeURIComponent(full);
-    var a = document.createElement("a"); a.href = uri; a.download = "netmeds-email.html";
-    document.body.appendChild(a); a.click(); a.remove();
-  };
-})();
-</script>
+  })();
+  </script>
 </body>
 </html>
